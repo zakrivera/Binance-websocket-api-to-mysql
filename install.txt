@@ -1,0 +1,3 @@
+1) Create a database in mysql and import flash.sql
+2) Config the sql settings in Market_logger.py
+3) Run!
