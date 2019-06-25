@@ -7,3 +7,12 @@ You need to pull submodules using ```git submodule update --init --recursive``` 
 
 
 To update submodules, use ```git submodule update --recursive --remote```
+
+## Install:
+
+1. Create a database in mysql and import flash.sql
+2. Config the sql settings in Market_logger.py
+3. If needed, install pip and unicorn-binance-websocket-api:
+```sudo apt-get install python3-pip```
+```pip3 install /home/user/Flash/unicorn-binance-websocket-api```
+4. Run!
