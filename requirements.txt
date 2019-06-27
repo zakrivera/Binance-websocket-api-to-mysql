@@ -1,2 +1,1 @@
 unicorn-binance-websocket-api
-https://github.com/unicorn-data-analysis/unicorn-binance-websocket-api.git
