@@ -128,6 +128,6 @@ binance_get_kline_stream_id1 = binance_websocket_api_manager.create_stream(chann
 while True:
 	runsince = int(time.time() - start_time)
 	runsince = str(datetime.timedelta(seconds=runsince))
-	sys.stdout.write('\r ' + runsince + '  Inserted rows: ' + str("{:,}".format(all_sql_wrote)))
-	sys.stdout.flush()
+	your_text = runsince + '  Inserted rows: ' + str("{:,}".format(all_sql_wrote))
+	binance_websocket_api_manager.print_summary(add_string=your_text)
 	time.sleep(1)
