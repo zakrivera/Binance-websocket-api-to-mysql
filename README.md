@@ -16,6 +16,6 @@ To update submodules, use ```git submodule update --recursive --remote```
 
 ```sudo apt-get install python3-pip```
 
-```pip3 install /home/user/Flash/unicorn-binance-websocket-api```
+`pip install unicorn-binance-websocket-api --upgrade`
 
 4. Run!

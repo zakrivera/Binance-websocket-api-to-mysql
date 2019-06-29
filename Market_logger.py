@@ -49,29 +49,32 @@ def fileprint(data, folder, filename): # Creates a lot of file in a new /data/ f
 	all_file_wrote += 1
 
 def sqlprint(ticker, depth, pair, now):
-	global all_sql_wrote
-	ticker = json.loads(ticker)
-	depth = json.loads(depth)
+	try:
+		global all_sql_wrote
+		ticker = json.loads(ticker)
+		depth = json.loads(depth)
 
-	sql = "INSERT INTO ticker (stream, timestamp, close) VALUES (%s, %s, %s)" # Insert ticker last price to 'ticker' table
-	val = (pair, now, ticker['data']['c'])
-	mycursor.execute(sql, val)
-	all_sql_wrote += 1
-
-	for elem in depth['data']['bids']:
-		sql = "INSERT INTO depth (stream, timestamp, side, price, amount) VALUES (%s, %s, %s, %s, %s)" # Insert top 20 bid to 'depth' table
-		val = (pair, now, 'bid', elem[0], elem[1])
+		sql = "INSERT INTO ticker (stream, timestamp, close) VALUES (%s, %s, %s)" # Insert ticker last price to 'ticker' table
+		val = (pair, now, ticker['data']['c'])
 		mycursor.execute(sql, val)
 		all_sql_wrote += 1
 
-	for elem in depth['data']['asks']:
-		sql = "INSERT INTO depth (stream, timestamp, side, price, amount) VALUES (%s, %s, %s, %s, %s)" # Insert top 20 ask to 'depth' table
-		val = (pair, now, 'ask', elem[0], elem[1])
-		mycursor.execute(sql, val)
-		all_sql_wrote += 1
+		for elem in depth['data']['bids']:
+			sql = "INSERT INTO depth (stream, timestamp, side, price, amount) VALUES (%s, %s, %s, %s, %s)" # Insert top 20 bid to 'depth' table
+			val = (pair, now, 'bid', elem[0], elem[1])
+			mycursor.execute(sql, val)
+			all_sql_wrote += 1
 
-	mydb.commit()
+		for elem in depth['data']['asks']:
+			sql = "INSERT INTO depth (stream, timestamp, side, price, amount) VALUES (%s, %s, %s, %s, %s)" # Insert top 20 ask to 'depth' table
+			val = (pair, now, 'ask', elem[0], elem[1])
+			mycursor.execute(sql, val)
+			all_sql_wrote += 1
 
+		mydb.commit()
+	except Exception as error_msg:
+		logging.critical("MySQL Error: " + str(error_msg))
+		
 
 def progress_data(streamdata):
 	data = json.loads(streamdata)
@@ -128,6 +131,6 @@ binance_get_kline_stream_id1 = binance_websocket_api_manager.create_stream(chann
 while True:
 	runsince = int(time.time() - start_time)
 	runsince = str(datetime.timedelta(seconds=runsince))
-	sys.stdout.write('\r ' + runsince + '  Inserted rows: ' + str("{:,}".format(all_sql_wrote)))
-	sys.stdout.flush()
+	your_text = runsince + '  Inserted rows: ' + str("{:,}".format(all_sql_wrote))
+	binance_websocket_api_manager.print_summary(add_string=your_text)
 	time.sleep(1)
