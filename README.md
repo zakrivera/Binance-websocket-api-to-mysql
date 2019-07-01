@@ -1,4 +1,5 @@
-# Flash-public
+# Binance websocket api to mysql
+
 This script saves all the Binance websocket's data to mysql.
 
 ## Maybe this script outdated, it just publicated for testing.
