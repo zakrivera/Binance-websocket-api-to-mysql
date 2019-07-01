@@ -76,27 +76,37 @@ def sqlprint(ticker, depth, pair, now):
 		logging.critical("MySQL Error: " + str(error_msg))
 		
 
-def progress_data(streamdata):
-	data = json.loads(streamdata)
-
-	key = data['stream'] # ethbtc@ticker
-	pair = data['stream'].split('@')[0] # ethbtc
-	now = int(time.time())
-	last_channel_save_diff = now - last_channel_save.get(key, 0)
-	if last_channel_save_diff >= 1: # if last data of stream saved more than a second ago
-		last_channel_data[key] = streamdata
-		last_channel_save[key] = int(time.time())
-		is_first_saved_for[key] = 1
-		
-		last_pair_save_diff = now - last_pair_save.get(pair, 0)
-		if last_pair_save_diff >= 1 & is_first_saved_for.get(pair + '@miniTicker', 0) == 1 & is_first_saved_for.get(pair + '@depth20', 0) == 1:
-			last_pair_save[pair] = int(time.time())
-			tickdata = last_channel_data[pair + '@miniTicker']
-			depthdata = last_channel_data[pair + '@depth20']
-			#fileprint('{"ticker":' + tickdata + ',\n"depth":' + depthdata + '}', pair, now)
-			sqlprint(tickdata, depthdata, pair, now)
-	else:
-		pass # if last stream data saved in a sec, skip.
+def progress_data(binance_websocket_api_manager):
+	while True:
+		if binance_websocket_api_manager.is_manager_stopping():
+			exit(0)
+		oldest_stream_data_from_stream_buffer = binance_websocket_api_manager.pop_stream_data_from_stream_buffer()
+		if oldest_stream_data_from_stream_buffer is False:
+			time.sleep(0.01)
+		else:
+			try:
+				data = json.loads(oldest_stream_data_from_stream_buffer)
+				key = data['stream'] # ethbtc@ticker
+				pair = data['stream'].split('@')[0] # ethbtc
+				now = int(time.time())
+				last_channel_save_diff = now - last_channel_save.get(key, 0)
+				if last_channel_save_diff >= 1: # if last data of stream saved more than a second ago
+					last_channel_data[key] = oldest_stream_data_from_stream_buffer
+					last_channel_save[key] = int(time.time())
+					is_first_saved_for[key] = 1
+					
+					last_pair_save_diff = now - last_pair_save.get(pair, 0)
+					if last_pair_save_diff >= 1 & is_first_saved_for.get(pair + '@miniTicker', 0) == 1 & is_first_saved_for.get(pair + '@depth20', 0) == 1:
+						last_pair_save[pair] = int(time.time())
+						tickdata = last_channel_data[pair + '@miniTicker']
+						depthdata = last_channel_data[pair + '@depth20']
+						#fileprint('{"ticker":' + tickdata + ',\n"depth":' + depthdata + '}', pair, now)
+						sqlprint(tickdata, depthdata, pair, now)
+				else:
+					pass # if last stream data saved in a sec, skip.
+			except Exception:
+				# not able to process the data? write it back to the stream_buffer
+				binance_websocket_api_manager.add_to_stream_buffer(oldest_stream_data_from_stream_buffer)
 
 
 # https://docs.python.org/3/library/logging.html
@@ -106,7 +116,7 @@ logging.basicConfig(filename=os.path.basename(__file__) + '.log',
 logging.getLogger('unicorn-log').setLevel(logging.INFO)
 logging.getLogger('unicorn-log').addHandler(logging.StreamHandler())
 
-binance_websocket_api_manager = BinanceWebSocketApiManager(progress_data) # create instance of BinanceWebSocketApiManager and call progress_data
+binance_websocket_api_manager = BinanceWebSocketApiManager() # create instance of BinanceWebSocketApiManager and call progress_data
 
 # define stream channels
 channels = {'depth20', 'miniTicker'}
@@ -121,13 +131,15 @@ markets = [] # Get all markets
 r = requests.get(url='https://www.binance.com/api/v1/exchangeInfo')
 data = r.json()
 for elem in data['symbols']:
-    if elem['status'] == 'TRADING':
-        markets.append(elem['symbol'].lower()) """
+	if elem['status'] == 'TRADING':
+		markets.append(elem['symbol'].lower()) """
 
 print('Connecting to ' + str(len(markets)) + ' market')
 
 binance_get_kline_stream_id1 = binance_websocket_api_manager.create_stream(channels, markets)
 
+worker_thread = threading.Thread(target=progress_data, args=(binance_websocket_api_manager,))
+worker_thread.start()
 while True:
 	runsince = int(time.time() - start_time)
 	runsince = str(datetime.timedelta(seconds=runsince))
