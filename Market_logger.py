@@ -1,3 +1,6 @@
+import sys
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 from unicorn_binance_websocket_api.unicorn_binance_websocket_api_manager import BinanceWebSocketApiManager
 import logging
 import time
@@ -5,7 +8,6 @@ import threading
 import os
 import json
 import datetime
-import sys
 import mysql.connector
 import requests
 
